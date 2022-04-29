@@ -11,6 +11,10 @@ const QuioscoProvider = ( { children } ) => {
      const [producto, setProducto] = useState({})
      const [modal, setModal] = useState(false)
      const [pedido, setPedido] = useState([])
+     const [nombre, setNombre] = useState('')
+     const [mesa, setMesa] = useState('')
+     const [mesero, setMesero] = useState('')
+     const [total, setTotal] = useState(0)
 
 
      const obtenerCategorias = async () => {
@@ -30,6 +34,12 @@ const QuioscoProvider = ( { children } ) => {
      useEffect(() => {
         setCategoriaActual(categorias[0])
      }, [categorias])
+
+     useEffect(() => {
+       const nuevoTotal = pedido.reduce( (total, producto) => (producto.precio * producto.cantidad) + total, 0 )
+       setTotal(nuevoTotal)
+     }, [pedido])
+     
      
 
      const handleClickCategoria = (categoria) => {
@@ -73,6 +83,50 @@ const QuioscoProvider = ( { children } ) => {
 
         setModal(false)
      }
+
+     const handleEditarCantidades = (producto) => {
+         setProducto(producto)
+         setModal(!modal)
+     }
+
+     const handleEliminarProducto = (id) => {
+         const pedidoActualizado = pedido.filter( (producto) => producto.id !== id )
+         setPedido(pedidoActualizado)
+     }
+
+     const colocarOrden = async (e) => {
+        e.preventDefault()
+        try {
+            const url = '/api/ordenes'
+            await axios.post(url, {
+               pedido,
+               nombre,
+               mesa,
+               mesero,
+               fecha: Date.now().toString(),
+               total 
+            })
+            //Se reinicia App
+            setCategoriaActual(categorias[0])
+            setProducto({})
+            setPedido([])
+            setNombre('')
+            setMesa('')
+            setMesero('')
+            setTotal(0)
+            toast.success('Pedido agregado exitosamente', {
+                position: "top-right",
+                autoClose: 5000,
+                hideProgressBar: false,
+                closeOnClick: true,
+                pauseOnHover: true,
+                draggable: true,
+                progress: undefined,
+            })
+        } catch (error) {
+            console.error(error)
+        }
+    }
      
 
     return (
@@ -86,7 +140,17 @@ const QuioscoProvider = ( { children } ) => {
                 modal,
                 producto,
                 handleAgregarPedido,
-                pedido
+                pedido,
+                handleEditarCantidades,
+                handleEliminarProducto,
+                nombre,
+                setNombre,
+                mesa,
+                setMesa,
+                mesero,
+                setMesero,
+                colocarOrden,
+                total
             }}
         >
             {children}
